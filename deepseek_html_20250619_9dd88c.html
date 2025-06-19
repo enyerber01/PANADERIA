@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panadería App</title>
+    <meta name="theme-color" content="#8B4513">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #8B4513; /* Marrón */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #A0522D;
+        }
+        .button {
+            background-color: #A0522D;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #8B4513;
+        }
+        .formula-cell {
+            background-color: #f0f0f0;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Control Panadería</h1>
+        
+        <table id="productos">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unitario</th>
+                    <th>Total</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="productos-body"></tbody>
+        </table>
+        
+        <button class="button" onclick="agregarProducto()">➕ Agregar Producto</button>
+        <button class="button" onclick="guardarDatos()">💾 Guardar</button>
+        
+        <div style="margin-top: 20px;">
+            <h3>Total del día: <span id="totalDia">0</span></h3>
+        </div>
+    </div>
+
+    <script>
+        // Datos almacenados en localStorage
+        let productos = JSON.parse(localStorage.getItem('productos')) || [];
+        
+        // Cargar datos al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            actualizarTabla();
+            calcularTotales();
+        });
+
+        // Función para agregar producto
+        function agregarProducto() {
+            const nombre = prompt("Nombre del producto:");
+            if (!nombre) return;
+            
+            const precio = parseFloat(prompt("Precio unitario:"));
+            if (isNaN(precio)) return;
+            
+            productos.push({
+                nombre: nombre,
+                cantidad: 0,
+                precio: precio,
+                total: 0
+            });
+            
+            guardarDatos();
+            actualizarTabla();
+        }
+
+        // Actualizar tabla
+        function actualizarTabla() {
+            const tbody = document.getElementById("productos-body");
+            tbody.innerHTML = "";
+            
+            productos.forEach((producto, index) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${producto.nombre}</td>
+                    <td><input type="number" value="${producto.cantidad}" onchange="actualizarCantidad(${index}, this.value)"></td>
+                    <td>${producto.precio.toFixed(2)}</td>
+                    <td class="formula-cell">${producto.total.toFixed(2)}</td>
+                    <td>
+                        <button class="button" onclick="editarProducto(${index})">✏️</button>
+                        <button class="button" onclick="eliminarProducto(${index})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Funciones CRUD
+        function actualizarCantidad(index, cantidad) {
+            productos[index].cantidad = parseFloat(cantidad) || 0;
+            productos[index].total = productos[index].cantidad * productos[index].precio;
+            guardarDatos();
+            calcularTotales();
+        }
+
+        function editarProducto(index) {
+            const nuevoNombre = prompt("Nuevo nombre:", productos[index].nombre);
+            if (nuevoNombre) productos[index].nombre = nuevoNombre;
+            
+            const nuevoPrecio = parseFloat(prompt("Nuevo precio:", productos[index].precio));
+            if (!isNaN(nuevoPrecio)) productos[index].precio = nuevoPrecio;
+            
+            guardarDatos();
+            actualizarTabla();
+        }
+
+        function eliminarProducto(index) {
+            if (confirm("¿Eliminar este producto?")) {
+                productos.splice(index, 1);
+                guardarDatos();
+                actualizarTabla();
+                calcularTotales();
+            }
+        }
+
+        // Guardar en localStorage
+        function guardarDatos() {
+            localStorage.setItem('productos', JSON.stringify(productos));
+            calcularTotales();
+        }
+
+        // Calcular totales
+        function calcularTotales() {
+            const total = productos.reduce((sum, p) => sum + p.total, 0);
+            document.getElementById("totalDia").textContent = total.toFixed(2);
+        }
+    </script>
+</body>
+</html>
